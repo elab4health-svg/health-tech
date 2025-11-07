@@ -535,143 +535,102 @@ export const PhilippinesAnalysis: React.FC = () => {
             <div className="space-y-8">
               {/* Population Breakdown */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Ethnicity */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border">
-                  <h4 className="text-2xl font-bold mb-6 text-center">Population by Ethnicity</h4>
-                  <div className="flex flex-col lg:flex-row gap-6 items-center">
-                    <div className="h-64 w-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={ethnicityData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            dataKey="value"
-                          >
-                            {ethnicityData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="space-y-3">
-                      {ethnicityData.map((entry, index) => (
-                        <div key={entry.name} className="flex items-center gap-3">
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: COLORS[index] }}
-                          ></div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-900">{entry.name}</div>
-                            <div className="text-2xl font-bold" style={{ color: COLORS[index] }}>
-                              {entry.percentage}%
+                
+                {/* Gender Distribution Card */}
+                <div className="bg-gradient-to-br from-pink-500 to-rose-500 text-white p-6 rounded-2xl 
+                  transition-all duration-300 hover:from-pink-600 hover:to-rose-600 
+                  hover:shadow-lg cursor-pointer group relative">
+                  <h4 className="text-xl font-bold mb-4">Gender Distribution</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {genderData.map((entry, index) => (
+                      <div key={entry.name} className="text-center">
+                        <div className="text-3xl font-bold mb-1">{entry.percentage}%</div>
+                        <div className="text-pink-100">{entry.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Hover Tooltip with Percentage Bars */}
+                  <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
+                    <div className="w-full space-y-4">
+                      <div className="text-white font-bold text-center mb-3">Detailed Breakdown</div>
+                      {genderData.map((entry, index) => (
+                        <div key={index} className="flex items-center justify-between text-white text-sm">
+                          <span className="font-medium w-20 text-left">{entry.name}</span>
+                          <div className="flex-1 mx-3">
+                            <div className="bg-gray-600 rounded-full h-2">
+                              <div 
+                                className="bg-white h-2 rounded-full" 
+                                style={{ width: `${entry.percentage}%` }}
+                              ></div>
                             </div>
                           </div>
+                          <span className="font-bold w-16 text-right">{entry.value}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Gender & Age Insights */}
-                <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-pink-500 to-rose-500 text-white p-6 rounded-2xl 
-                transition-all duration-300 hover:from-pink-600 hover:to-rose-600 
-                hover:shadow-lg cursor-pointer group relative">
-                    <h4 className="text-xl font-bold mb-4">Gender Distribution</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      {genderData.map((entry, index) => (
-                        <div key={entry.name} className="text-center">
-                          <div className="text-3xl font-bold mb-1">{entry.percentage}%</div>
-                          <div className="text-pink-100">{entry.name}</div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Hover Tooltip with Percentage Bars */}
-                    <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
-                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
-                      <div className="w-full space-y-4">
-                        <div className="text-white font-bold text-center mb-3">Detailed Breakdown</div>
-                        {genderData.map((entry, index) => (
-                          <div key={index} className="flex items-center justify-between text-white text-sm">
-                            <span className="font-medium w-20 text-left">{entry.name}</span>
-                            <div className="flex-1 mx-3">
-                              <div className="bg-gray-600 rounded-full h-2">
-                                <div 
-                                  className="bg-white h-2 rounded-full" 
-                                  style={{ width: `${entry.percentage}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                            <span className="font-bold w-16 text-right">{entry.value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white p-6 rounded-2xl 
+                {/* Age Insights Card */}
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white p-6 rounded-2xl 
                   transition-all duration-300 hover:from-indigo-600 hover:to-purple-600 
                   hover:shadow-lg cursor-pointer group relative">
-                    <h4 className="text-xl font-bold mb-4">Age Insights</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span>Most Active Age Group</span>
-                        <span className="font-bold">{ageStats?.mostActiveAgeGroup || '25-34'} years</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Highest Tech Adoption</span>
-                        <span className="font-bold">{ageStats?.highestTechAgeGroup || '25-34'} years</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Largest Segment</span>
-                        <span className="font-bold">{ageStats?.largestAgeGroup || '25-34'} years</span>
-                      </div>
-                      <div className="flex justify-between border-t border-white/20 pt-2">
-                        <span>Average Age</span>
-                        <span className="font-bold">{ageStats?.averageAge || '32.5'} years</span>
-                      </div>
+                  <h4 className="text-xl font-bold mb-4">Age Insights</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span>Most Active Age Group</span>
+                      <span className="font-bold">{ageStats?.mostActiveAgeGroup || '25-34'} years</span>
                     </div>
-                    
-                    {/* Simple Hover Tooltip */}
-                    <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
-                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
-                      <div className="text-center">
-                        <div className="text-white font-bold text-lg mb-3">Age Distribution</div>
-                        <div className="text-white text-sm space-y-2">
-                          {(() => {
-                            const ageGroups = {
-                              '18-24': phData.filter(d => d.A1 >= 18 && d.A1 <= 24).length,
-                              '25-34': phData.filter(d => d.A1 >= 25 && d.A1 <= 34).length,
-                              '35-44': phData.filter(d => d.A1 >= 35 && d.A1 <= 44).length,
-                              '45-54': phData.filter(d => d.A1 >= 45 && d.A1 <= 54).length,
-                              '55+': phData.filter(d => d.A1 >= 55).length
-                            };
-                            
-                            return Object.entries(ageGroups).map(([group, count]) => (
-                              <div key={group} className="flex justify-between">
-                                <span>{group} years:</span>
-                                <span className="font-bold ml-4">
-                                  {count} ({(count / phData.length * 100).toFixed(1)}%)
-                                </span>
-                              </div>
-                            ));
-                          })()}
-                        </div>
+                    <div className="flex justify-between">
+                      <span>Highest Tech Adoption</span>
+                      <span className="font-bold">{ageStats?.highestTechAgeGroup || '25-34'} years</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Largest Segment</span>
+                      <span className="font-bold">{ageStats?.largestAgeGroup || '25-34'} years</span>
+                    </div>
+                    <div className="flex justify-between border-t border-white/20 pt-2">
+                      <span>Average Age</span>
+                      <span className="font-bold">{ageStats?.averageAge || '32.5'} years</span>
+                    </div>
+                  </div>
+                  
+                  {/* Simple Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
+                    <div className="text-center">
+                      <div className="text-white font-bold text-lg mb-3">Age Distribution</div>
+                      <div className="text-white text-sm space-y-2">
+                        {(() => {
+                          const ageGroups = {
+                            '18-24': phData.filter(d => d.A1 >= 18 && d.A1 <= 24).length,
+                            '25-34': phData.filter(d => d.A1 >= 25 && d.A1 <= 34).length,
+                            '35-44': phData.filter(d => d.A1 >= 35 && d.A1 <= 44).length,
+                            '45-54': phData.filter(d => d.A1 >= 45 && d.A1 <= 54).length,
+                            '55+': phData.filter(d => d.A1 >= 55).length
+                          };
+                          
+                          return Object.entries(ageGroups).map(([group, count]) => (
+                            <div key={group} className="flex justify-between">
+                              <span>{group} years:</span>
+                              <span className="font-bold ml-4">
+                                {count} ({(count / phData.length * 100).toFixed(1)}%)
+                              </span>
+                            </div>
+                          ));
+                        })()}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Education & Income */}
+              {/* Education & Income - Now this will be the second row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border text-center 
-                            transition-all duration-300 hover:shadow-lg cursor-pointer group relative">
+                              transition-all duration-300 hover:shadow-lg cursor-pointer group relative">
                   <GraduationCap className="w-16 h-16 text-blue-500 mx-auto mb-4" />
                   <h4 className="text-xl font-bold mb-2">Education Impact</h4>
                   <div className="text-3xl font-bold text-blue-600 mb-2">{educationStats.tertiaryPercent}%</div>
@@ -718,6 +677,7 @@ export const PhilippinesAnalysis: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
                 {/* Income Card with Hover */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border text-center 
                   transition-all duration-300 hover:shadow-lg cursor-pointer group relative">

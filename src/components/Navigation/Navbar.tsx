@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, BarChart3, Map, Users, ChevronDown, Menu, X } from 'lucide-react';
+import { Activity, BarChart3, Map, Users, ChevronDown, Menu, X, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
@@ -29,7 +29,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
         { id: 'GBA', label: 'GBA', icon: Users },
       ]
     },
-    { id: 'insights', label: 'Regional Insights', icon: Activity, category: 'main' }
+    { id: 'insights', label: 'Regional Insights', icon: Activity, category: 'main' },
+    { id: 'support', label: 'Research Support', icon: HelpCircle, category: 'main' }
   ];
 
   const flatTabs = [
@@ -42,7 +43,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
     { id: 'philippines', label: 'Philippines', icon: Users },
     { id: 'hongkong', label: 'Hong Kong', icon: Users },
     { id: 'GBA', label: 'GBA', icon: Users },
-    { id: 'insights', label: 'Regional Insights', icon: Activity }
+    { id: 'insights', label: 'Regional Insights', icon: Activity },
+    { id: 'support', label: 'Research Support', icon: HelpCircle }
   ];
 
   const CountriesDropdown = () => {
@@ -186,6 +188,33 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
               )}
               <Activity className="w-4 h-4 relative z-10" />
               <span className="relative z-10">Regional Insights</span>
+            </motion.button>
+
+            {/* Research Support Tab */}
+            <motion.button
+              onClick={() => onTabChange('support')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 relative overflow-hidden ${
+                activeTab === 'support'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onHoverStart={() => setHoveredTab('support')}
+              onHoverEnd={() => setHoveredTab(null)}
+            >
+              {hoveredTab === 'support' && activeTab !== 'support' && (
+                <motion.div
+                  layoutId="hoverBackground"
+                  className="absolute inset-0 bg-gray-100 rounded-lg"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                />
+              )}
+              <HelpCircle className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">Research Support</span>
             </motion.button>
           </div>
 

@@ -9,6 +9,7 @@ import { PhilippinesAnalysis } from './components/Dashboard/PhilippinesAnalysis'
 import { VietnamAnalysis } from './components/Dashboard/VietnamAnalysis';
 import { ThailandAnalysis } from './components/Dashboard/ThailandAnalysis';
 import { RegionalInsights } from './components/Dashboard/RegionalInsights';
+import ResearchSupport from './components/Dashboard/ResearchSupport';
 import './components/Charts/ChartSetup';
 import { HongKongAnalysis } from './components/Dashboard/HongKongAnalysis';
 import { GBAAnalysis } from './components/Dashboard/GBAAnalysis';
@@ -40,6 +41,8 @@ function App() {
         return <GBAAnalysis />;
       case 'insights':
         return <RegionalInsights />;
+      case 'support':
+        return <ResearchSupport />;
       default:
         return <Overview onTabChange={setActiveTab}/>;
     }

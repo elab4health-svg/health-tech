@@ -4,7 +4,7 @@ import { getCountryData, HealthData, getCountryByCode } from '../../data/sampleD
 import { Users, Smartphone, Watch, Heart, Brain, TrendingUp, Award, MapPin, GraduationCap, DollarSign, Activity, Zap } from 'lucide-react';
 
 export const VietnamAnalysis: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'demographics' | 'technology' | 'health'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'demographics' | 'technology' | 'health' | 'apps_wearables' | 'social_environment'>('overview');
   
   // Filter Vietnam data
   const vnCountry = getCountryByCode('vn');
@@ -348,7 +348,9 @@ export const VietnamAnalysis: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: MapPin },
     { id: 'demographics', label: 'Demographics', icon: Users },
     { id: 'technology', label: 'Technology', icon: Smartphone },
-    { id: 'health', label: 'Health', icon: Heart }
+    { id: 'health', label: 'Health', icon: Heart },
+    { id: 'apps_wearables', label: 'Apps & Wearables', icon: Watch }, 
+    { id: 'social_environment', label: 'Social Environment', icon: Users }
   ];
 
   const formatHoursAndMinutes = (hours: number): string => {
@@ -362,6 +364,100 @@ export const VietnamAnalysis: React.FC = () => {
     const percentage = (score / maxScore) * 100;
     return `${percentage.toFixed(1)}%`;
   };
+
+  const calculateAppsWearablesStats = (data: HealthData[]) => {
+    if (data.length === 0) return null;
+
+    // Filter data that has Section C data
+    const dataWithSectionC = data.filter(d => d.C1_1 !== undefined);
+    
+    if (dataWithSectionC.length === 0) return null;
+
+    // C1: Wearable usage (check if any wearable is used)
+    const anyWearableUsage = Math.round((dataWithSectionC.filter(d => 
+      d.C1_1 === 1 || d.C1_2 === 1 || d.C1_3 === 1 || d.C1_4 === 1 || 
+      d.C1_5 === 1 || d.C1_6 === 1 || d.C1_7 === 1
+    ).length / dataWithSectionC.length) * 100);
+
+    // C3: Health app usage (check if any app is used)
+    const anyAppUsage = Math.round((dataWithSectionC.filter(d => 
+      d.C3_1 === 1 || d.C3_2 === 1 || d.C3_3 === 1 || d.C3_4 === 1 || 
+      d.C3_5 === 1 || d.C3_6 === 1 || d.C3_7 === 1 || d.C3_8 === 1 ||
+      d.C3_9 === 1 || d.C3_10 === 1 || d.C3_11 === 1 || d.C3_12 === 1 ||
+      d.C3_13 === 1 || d.C3_14 === 1 || d.C3_15 === 1 || d.C3_16 === 1 ||
+      d.C3_17 === 1 || d.C3_18 === 1 || d.C3_19 === 1 || d.C3_20 === 1 ||
+      d.C3_21 === 1 || d.C3_22 === 1
+    ).length / dataWithSectionC.length) * 100);
+
+    // C5: Health categories used
+    const healthCategories = {
+      fitness: Math.round((dataWithSectionC.filter(d => d.C5_1 === 1).length / dataWithSectionC.length) * 100),
+      sleep: Math.round((dataWithSectionC.filter(d => d.C5_2 === 1).length / dataWithSectionC.length) * 100),
+      mentalHealth: Math.round((dataWithSectionC.filter(d => d.C5_3 === 1).length / dataWithSectionC.length) * 100),
+      diet: Math.round((dataWithSectionC.filter(d => d.C5_4 === 1).length / dataWithSectionC.length) * 100),
+      medicalCondition: Math.round((dataWithSectionC.filter(d => d.C5_5 === 1).length / dataWithSectionC.length) * 100)
+    };
+
+    // C6: Perceived familiarity (average)
+    const avgFamiliarity = dataWithSectionC.reduce((sum, d) => 
+      sum + ((d.C6_1 || 0) + (d.C6_2 || 0) + (d.C6_3 || 0)) / 3, 0) / dataWithSectionC.length;
+
+    // C7: Internet stability
+    const stableInternetUsers = Math.round((dataWithSectionC.filter(d => (d.C7 || 0) >= 4).length / dataWithSectionC.length) * 100);
+
+    return {
+      anyWearableUsage,
+      anyAppUsage,
+      healthCategories,
+      avgFamiliarity: parseFloat(avgFamiliarity.toFixed(1)),
+      stableInternetUsers,
+      sampleSize: dataWithSectionC.length
+    };
+  };
+
+  const calculateSocialEnvironmentStats = (data: HealthData[]) => {
+    if (data.length === 0) return null;
+
+    // Filter data that has Section D data
+    const dataWithSectionD = data.filter(d => d.D1_1 !== undefined);
+    
+    if (dataWithSectionD.length === 0) return null;
+
+    // D1: Health Consciousness (average of all 9 items)
+    const avgHealthConsciousness = dataWithSectionD.reduce((sum, d) => 
+      sum + ((d.D1_1 || 0) + (d.D1_2 || 0) + (d.D1_3 || 0) + (d.D1_4 || 0) + 
+            (d.D1_5 || 0) + (d.D1_6 || 0) + (d.D1_7 || 0) + (d.D1_8 || 0) + (d.D1_9 || 0)) / 9, 0) / dataWithSectionD.length;
+
+    // D2: Exercise Intention (average of 3 items)
+    const avgExerciseIntention = dataWithSectionD.reduce((sum, d) => 
+      sum + ((d.D2_1 || 0) + (d.D2_2 || 0) + (d.D2_3 || 0)) / 3, 0) / dataWithSectionD.length;
+
+    // D4: Political Orientation
+    const politicalScores = dataWithSectionD.map(d => d.D4 || 6).filter(score => score > 0);
+    const avgPoliticalScore = politicalScores.length > 0 ? 
+      politicalScores.reduce((sum, score) => sum + score, 0) / politicalScores.length : 6;
+
+    // D8: Descriptive Social Norms
+    const avgDescriptiveNorms = dataWithSectionD.reduce((sum, d) => 
+      sum + ((d.D8_1 || 0) + (d.D8_2 || 0) + (d.D8_3 || 0)) / 3, 0) / dataWithSectionD.length;
+
+    // D10: Government Support
+    const avgGovSupport = dataWithSectionD.reduce((sum, d) => 
+      sum + ((d.D10_1 || 0) + (d.D10_2 || 0) + (d.D10_3 || 0)) / 3, 0) / dataWithSectionD.length;
+
+    return {
+      avgHealthConsciousness: parseFloat(avgHealthConsciousness.toFixed(1)),
+      avgExerciseIntention: parseFloat(avgExerciseIntention.toFixed(1)),
+      avgPoliticalScore: parseFloat(avgPoliticalScore.toFixed(1)),
+      avgDescriptiveNorms: parseFloat(avgDescriptiveNorms.toFixed(1)),
+      avgGovSupport: parseFloat(avgGovSupport.toFixed(1)),
+      sampleSize: dataWithSectionD.length
+    };
+  };
+
+  // Calculate the stats
+  const appsWearablesStats = calculateAppsWearablesStats(vnData);
+  const socialEnvironmentStats = calculateSocialEnvironmentStats(vnData);
 
   return (
     <div className="space-y-8 bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl">
@@ -1134,6 +1230,381 @@ export const VietnamAnalysis: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'apps_wearables' && (
+            <div className="space-y-8">
+              {/* Apps & Wearables Overview */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Health Apps Card with Hover */}
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-blue-600 hover:to-indigo-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Smartphone className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {appsWearablesStats ? appsWearablesStats.anyAppUsage : 0}%
+                  </div>
+                  <div className="text-blue-100 font-medium">Use Health Apps</div>
+                  <div className="text-blue-200 text-sm mt-2">
+                    {appsWearablesStats ? appsWearablesStats.sampleSize : 0} participants
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-white font-bold text-lg mb-2">Health App Usage</div>
+                      <div className="text-white text-sm">
+                        Percentage of participants who use at least one health app
+                      </div>
+                      <div className="text-white text-xs opacity-90">
+                        Based on 22 different health app categories
+                      </div>
+                      <div className="text-white text-xs opacity-80 mt-2">
+                        Survey sample: {appsWearablesStats ? appsWearablesStats.sampleSize : 0} participants
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wearables Card with Hover */}
+                <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-purple-600 hover:to-pink-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Watch className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {appsWearablesStats ? appsWearablesStats.anyWearableUsage : 0}%
+                  </div>
+                  <div className="text-purple-100 font-medium">Use Wearables</div>
+                  <div className="text-purple-200 text-sm mt-2">
+                    Various brands & types
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-white font-bold text-lg mb-2">Wearable Device Usage</div>
+                      <div className="text-white text-sm">
+                        Percentage of participants who use at least one wearable device
+                      </div>
+                      <div className="text-white text-xs opacity-90">
+                        Includes smartwatches, fitness trackers, and health bands
+                      </div>
+                      <div className="text-white text-xs opacity-80 mt-2">
+                        Survey sample: {appsWearablesStats ? appsWearablesStats.sampleSize : 0} participants
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Internet Stability Card with Hover */}
+                <div className="bg-gradient-to-br from-green-500 to-teal-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-green-600 hover:to-teal-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Activity className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {appsWearablesStats ? appsWearablesStats.stableInternetUsers : 0}%
+                  </div>
+                  <div className="text-green-100 font-medium">Stable Internet</div>
+                  <div className="text-green-200 text-sm mt-2">
+                    Reliable connectivity
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-white font-bold text-lg mb-2">Internet Stability</div>
+                      <div className="text-white text-sm">
+                        Percentage of participants with stable internet access (rated 4-5 out of 5)
+                      </div>
+                      <div className="text-white text-xs opacity-90">
+                        Scale: 1 (Not stable at all) to 5 (Extremely stable)
+                      </div>
+                      <div className="text-white text-xs opacity-80 mt-2">
+                        Survey sample: {appsWearablesStats ? appsWearablesStats.sampleSize : 0} participants
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rest of the Apps & Wearables content remains the same */}
+              {/* Health Categories Usage */}
+              {appsWearablesStats && (
+                <div className="bg-white p-6 rounded-2xl shadow-sm border">
+                  <h4 className="text-xl font-bold mb-4">Health Categories Used</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    {Object.entries(appsWearablesStats.healthCategories).map(([category, percentage]) => (
+                      <div key={category} className="text-center p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600 mb-1">{percentage}%</div>
+                        <div className="text-sm text-gray-600 capitalize">
+                          {category.replace(/([A-Z])/g, ' $1').trim()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Technology Familiarity */}
+              {appsWearablesStats && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border">
+                    <h4 className="text-xl font-bold mb-4">Technology Familiarity</h4>
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-blue-600 mb-2">
+                        {appsWearablesStats.avgFamiliarity}/5
+                      </div>
+                      <p className="text-gray-600">Average familiarity score</p>
+                      <div className="mt-4">
+                        <div className="w-full bg-gray-200 rounded-full h-4">
+                          <div 
+                            className="bg-blue-500 h-4 rounded-full" 
+                            style={{ width: `${(appsWearablesStats.avgFamiliarity / 5) * 100}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-sm text-gray-500 mt-1">
+                          <span>Low</span>
+                          <span>High</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border">
+                    <h4 className="text-xl font-bold mb-4">Digital Infrastructure</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="font-medium">Internet Stability</span>
+                          <span className="font-bold text-green-600">{appsWearablesStats.stableInternetUsers}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full" 
+                            style={{ width: `${appsWearablesStats.stableInternetUsers}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="font-medium">Health App Adoption</span>
+                          <span className="font-bold text-blue-600">{appsWearablesStats.anyAppUsage}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full" 
+                            style={{ width: `${appsWearablesStats.anyAppUsage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'social_environment' && (
+            <div className="space-y-8">
+              {/* Social Environment Overview */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Health Consciousness Card with Hover */}
+                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-orange-600 hover:to-red-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Heart className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {socialEnvironmentStats ? convertToPercentage(socialEnvironmentStats.avgHealthConsciousness, 5) : '0%'}
+                  </div>
+                  <div className="text-orange-100 font-medium">Health Conscious</div>
+                  <div className="text-orange-200 text-sm mt-2">
+                    Self-awareness score
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-white font-bold text-lg mb-2">Health Consciousness</div>
+                      <div className="text-white text-sm">
+                        Average score on health awareness and self-monitoring (9-item scale)
+                      </div>
+                      <div className="text-white text-xs opacity-90">
+                        Scale: 1 (Does not describe me) to 5 (Describes me very well)
+                      </div>
+                      <div className="text-white text-xs opacity-80 mt-2">
+                        Measures health self-consciousness, alertness, and involvement
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Exercise Intention Card with Hover */}
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-green-600 hover:to-emerald-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Activity className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {socialEnvironmentStats ? convertToPercentage(socialEnvironmentStats.avgExerciseIntention,7) : '0%'}
+                  </div>
+                  <div className="text-green-100 font-medium">Exercise Intent</div>
+                  <div className="text-green-200 text-sm mt-2">
+                    Motivation level
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-white font-bold text-lg mb-2">Exercise Intention</div>
+                      <div className="text-white text-sm">
+                        Average intention to exercise regularly over the next 2 weeks
+                      </div>
+                      <div className="text-white text-xs opacity-90">
+                        Scale: 1 (Strongly Disagree) to 7 (Strongly Agree)
+                      </div>
+                      <div className="text-white text-xs opacity-80 mt-2">
+                        Based on 3-item exercise intention scale
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Government Support Card with Hover */}
+                <div className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-blue-600 hover:to-cyan-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {socialEnvironmentStats ? convertToPercentage(socialEnvironmentStats.avgGovSupport,7) : '0%'}
+                  </div>
+                  <div className="text-blue-100 font-medium">Gov Support</div>
+                  <div className="text-blue-200 text-sm mt-2">
+                    Policy perception
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-85 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-white font-bold text-lg mb-2">Government Support Perception</div>
+                      <div className="text-white text-sm">
+                        Average perception of government support for digital health adoption
+                      </div>
+                      <div className="text-white text-xs opacity-90">
+                        Scale: 1 (Strongly Disagree) to 7 (Strongly Agree)
+                      </div>
+                      <div className="text-white text-xs opacity-80 mt-2">
+                        Based on 3-item government support scale
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Political Orientation & Social Norms */}
+              {socialEnvironmentStats && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border">
+                    <h4 className="text-xl font-bold mb-4">Political Orientation</h4>
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-purple-600 mb-2">
+                        {socialEnvironmentStats.avgPoliticalScore}/11
+                      </div>
+                      <p className="text-gray-600">Average political score</p>
+                      <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+                        <div className="text-center p-2 bg-blue-50 rounded">
+                          <div className="font-bold text-blue-600">1-4</div>
+                          <div className="text-gray-600">Liberal</div>
+                        </div>
+                        <div className="text-center p-2 bg-purple-50 rounded">
+                          <div className="font-bold text-purple-600">5-7</div>
+                          <div className="text-gray-600">Moderate</div>
+                        </div>
+                        <div className="text-center p-2 bg-red-50 rounded">
+                          <div className="font-bold text-red-600">8-11</div>
+                          <div className="text-gray-600">Conservative</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border">
+                    <h4 className="text-xl font-bold mb-4">Social Norms</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="font-medium">Peer Influence</span>
+                          <span className="font-bold text-green-600">
+                            {socialEnvironmentStats.avgDescriptiveNorms}/7
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full" 
+                            style={{ width: `${(socialEnvironmentStats.avgDescriptiveNorms / 7) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="font-medium">Health Consciousness</span>
+                          <span className="font-bold text-orange-600">
+                            {socialEnvironmentStats.avgHealthConsciousness}/5
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-orange-500 h-2 rounded-full" 
+                            style={{ width: `${(socialEnvironmentStats.avgHealthConsciousness / 5) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="font-medium">Exercise Motivation</span>
+                          <span className="font-bold text-blue-600">
+                            {socialEnvironmentStats.avgExerciseIntention}/7
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full" 
+                            style={{ width: `${(socialEnvironmentStats.avgExerciseIntention / 7) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Government Support */}
+              {socialEnvironmentStats && (
+                <div className="bg-white p-6 rounded-2xl shadow-sm border">
+                  <h4 className="text-xl font-bold mb-4">Government Support Perception</h4>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-green-600 mb-2">
+                      {socialEnvironmentStats.avgGovSupport}/7
+                    </div>
+                    <p className="text-gray-600">Average perception of government support for digital health</p>
+                    <div className="mt-6">
+                      <div className="w-full bg-gray-200 rounded-full h-4">
+                        <div 
+                          className="bg-green-500 h-4 rounded-full" 
+                          style={{ width: `${(socialEnvironmentStats.avgGovSupport / 7) * 100}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-500 mt-2">
+                        <span>Low Support</span>
+                        <span>High Support</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

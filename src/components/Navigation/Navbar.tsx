@@ -19,14 +19,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
       icon: Map, 
       category: 'main',
       subItems: [
+        { id: 'hongkong', label: 'Hong Kong', icon: Users },
+        { id: 'GBA', label: 'GBA', icon: Users },
         { id: 'singapore', label: 'Singapore', icon: Users },
         { id: 'malaysia', label: 'Malaysia', icon: Users },
         { id: 'indonesia', label: 'Indonesia', icon: Users },
         { id: 'thailand', label: 'Thailand', icon: Users },
         { id: 'vietnam', label: 'Vietnam', icon: Users },
         { id: 'philippines', label: 'Philippines', icon: Users },
-        { id: 'hongkong', label: 'Hong Kong', icon: Users },
-        { id: 'GBA', label: 'GBA', icon: Users },
       ]
     },
     { id: 'insights', label: 'Regional Insights', icon: Activity, category: 'main' },
@@ -35,14 +35,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
 
   const flatTabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'hongkong', label: 'Hong Kong', icon: Users },
+    { id: 'GBA', label: 'GBA', icon: Users },
     { id: 'singapore', label: 'Singapore', icon: Users },
     { id: 'malaysia', label: 'Malaysia', icon: Users },
     { id: 'indonesia', label: 'Indonesia', icon: Users },
     { id: 'thailand', label: 'Thailand', icon: Users },
     { id: 'vietnam', label: 'Vietnam', icon: Users },
     { id: 'philippines', label: 'Philippines', icon: Users },
-    { id: 'hongkong', label: 'Hong Kong', icon: Users },
-    { id: 'GBA', label: 'GBA', icon: Users },
     { id: 'insights', label: 'Regional Insights', icon: Activity },
     { id: 'support', label: 'Research Support', icon: HelpCircle }
   ];

@@ -58,21 +58,21 @@ const mapSlides: {
     zoom: 4.5,
     description: "Interactive map showing all study locations across Hong Kong, Greater Bay Area, and Southeast Asia"
   },
-  {
-    title: "Health Technology Usage Trends",
-    type: "image",
-    description: "Visual analysis of health app and wearable device usage patterns across different regions"
-  },
-  {
-    title: "Regional Comparison Video",
-    type: "video",
-    description: "Animated comparison of health technology adoption and wellbeing outcomes"
-  },
-  {
-    title: "Data Collection Process",
-    type: "image",
-    description: "Overview of our research methodology and data collection process across all study regions"
-  }
+  // {
+  //   title: "Health Technology Usage Trends",
+  //   type: "image",
+  //   description: "Visual analysis of health app and wearable device usage patterns across different regions"
+  // },
+  // {
+  //   title: "Regional Comparison Video",
+  //   type: "video",
+  //   description: "Animated comparison of health technology adoption and wellbeing outcomes"
+  // },
+  // {
+  //   title: "Data Collection Process",
+  //   type: "image",
+  //   description: "Overview of our research methodology and data collection process across all study regions"
+  // }
 ];
 
 // Create custom marker with flag

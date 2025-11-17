@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { processedHKData, calculateBMI, calculateMentalHealthScores, getDistrictName } from '../../data/hkData';
+import { FlagImage } from './flagImage';
+import { HKHealthData } from '../../data/hkData';
 import { processedHKCDData, calculateDementiaKnowledgeScore, calculateTrustInAI, calculateTechnologyAnxiety, calculateIntentionToUse, getHealthWearablesUsed, getHealthAppsUsed } from '../../data/hk2Data';
 import { Users, Heart, Brain, TrendingUp, AlertCircle, Bed, Clock, Award, MapPin, HeartPulse, GraduationCap, X, DollarSign, Activity, Moon, FolderHeart as UserHeart, Building2, Stethoscope, Target, BarChart3, Smartphone, Bot, Eye, Shield, Search, Zap } from 'lucide-react';
 
@@ -17,14 +19,14 @@ export const HongKongAnalysis: React.FC = () => {
   const avgMentalHealth = (hkData.reduce((sum, d) => {
     const scores = calculateMentalHealthScores(d);
     return sum + (scores.emotional + scores.social + scores.psychological) / 3;
-  }, 0) / hkData.length).toFixed(1);
+  }, 0) / hkData.length);
   
   const avgBMI = (hkData.reduce((sum, d) => sum + calculateBMI(d.Weight, d.Height), 0) / hkData.length).toFixed(1);
   const goodSleepPercent = Math.round((hkData.filter(d => d.SleepQuality <= 2).length / hkData.length) * 100);
 
   // Calculate key metrics for dementia & AI data
   const avgDementiaKnowledge = (hkCDData.reduce((sum, d) => sum + calculateDementiaKnowledgeScore(d), 0) / hkCDData.length).toFixed(1);
-  const avgTrustInAI = (hkCDData.reduce((sum, d) => sum + calculateTrustInAI(d), 0) / hkCDData.length).toFixed(1);
+  const avgTrustInAI = (hkCDData.reduce((sum, d) => sum + calculateTrustInAI(d), 0) / hkCDData.length);
   const techAnxietyPercent = Math.round((hkCDData.filter(d => calculateTechnologyAnxiety(d) >= 4).length / hkCDData.length) * 100);
   const highIntentionToUse = Math.round((hkCDData.filter(d => calculateIntentionToUse(d) >= 5).length / hkCDData.length) * 100);
 
@@ -138,7 +140,7 @@ export const HongKongAnalysis: React.FC = () => {
   const aiPerceptionData = [
     {
       metric: 'Trust in AI',
-      score: parseFloat(avgTrustInAI),
+      score: avgTrustInAI,
       fullMark: 7
     },
     {
@@ -180,14 +182,60 @@ export const HongKongAnalysis: React.FC = () => {
     { id: 'ai-tech', label: 'AI & Technology', icon: Bot }
   ];
 
+  const calculateAverageEducation = (data: HKHealthData[]): number => {
+    return data.reduce((sum, d) => sum + d.Education, 0) / data.length;
+  };
+
+  const calculateMedianIncome = (data: HKHealthData[]): number => {
+    const incomeMap = {
+      1: 5000,   // Below 10,000
+      2: 15000,  // 10,001-20,000
+      3: 25000,  // 20,001-30,000
+      4: 35000,  // 30,001-40,000
+      5: 45000,  // 40,001-50,000
+      6: 55000,  // 50,001-60,000
+      7: 65000   // Above 60,000
+    };
+    
+    return data.reduce((sum, d) => sum + (incomeMap[d.Income as keyof typeof incomeMap] || 0), 0) / data.length;
+  };
+
+  const calculateAverageSocialLadder = (data: HKHealthData[]): number => {
+    return data.reduce((sum, d) => sum + d.Ladder, 0) / data.length;
+  };
+
+  const getEducationLevelDescription = (avgEducation: number): string => {
+    if (avgEducation >= 5) return "Bachelor's & Above";
+    if (avgEducation >= 4) return "Higher Diploma & Above";
+    if (avgEducation >= 3) return "Foundation Diploma & Above";
+    return "High School & Below";
+  };
+
+  const getSocialLadderDescription = (avgLadder: number): string => {
+    if (avgLadder >= 8) return "High perceived status";
+    if (avgLadder >= 6) return "Upper-middle status";
+    if (avgLadder >= 4) return "Middle status";
+    return "Lower-middle status";
+  };
+
+  const formatHoursAndMinutes = (hours: number): string => {
+    const totalMinutes = hours * 60;
+    const hoursPart = Math.floor(totalMinutes / 60);
+    const minutesPart = Math.round(totalMinutes % 60);
+    return `${hoursPart}h ${minutesPart}m`;
+  };
+
+  const convertToPercentage = (score: number, maxScore: number = 6): string => {
+    const percentage = (score / maxScore) * 100;
+    return `${percentage.toFixed(1)}%`;
+  };
+
   return (
     <div className="space-y-8 bg-gradient-to-br from-red-50 to-orange-50 p-8 rounded-2xl">
       {/* Header */}
       <div className="text-center bg-white p-8 rounded-2xl shadow-sm">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-white" />
-          </div>
+          <FlagImage code='hk' size='xxl'/>
           <h1 className="text-4xl font-bold text-gray-900">香港 Hong Kong</h1>
         </div>
         <h2 className="text-2xl font-semibold text-gray-700 mb-2">Comprehensive Health, Dementia & AI Technology Analysis</h2>
@@ -222,95 +270,193 @@ export const HongKongAnalysis: React.FC = () => {
           {activeTab === 'overview' && (
             <div className="space-y-8">
               {/* Hero Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                {/* Health Survey - No hover */}
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl text-center">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-80" />
                   <div className="text-3xl lg:text-4xl font-bold mb-2">{hkData.length}</div>
                   <div className="text-blue-100 font-medium text-sm">Health Survey</div>
                 </div>
-                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-2xl text-center">
-                  <Heart className="w-12 h-12 mx-auto mb-4 opacity-80" />
+                
+                {/* Excellent Health - With hover */}
+                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-green-600 hover:to-green-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Heart className="w-12 h-12 mx-auto mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl lg:text-4xl font-bold mb-2">{excellentHealthPercent}%</div>
                   <div className="text-green-100 font-medium text-sm">Excellent Health</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2">
+                      Based on General Health question:<br/>
+                      1. Poor<br/>2. Fair<br/>3. Good<br/>4. Very Good<br/>5. Excellent<br/>
+                      Shows % reporting Good, Very Good or Excellent health
+                    </span>
+                  </div>
                 </div>
+                
+                {/* Mental Wellbeing - With hover */}
                 <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-2xl text-center 
                 transition-all duration-300 hover:from-purple-600 hover:to-purple-700 
                 hover:shadow-lg cursor-pointer group relative">
                   <Brain className="w-12 h-12 mx-auto mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
-                  <div className="text-3xl lg:text-4xl font-bold mb-2">{avgMentalHealth}/6</div>
+                  <div className="text-3xl lg:text-4xl font-bold mb-2">{convertToPercentage(avgMentalHealth,6)}</div>
                   <div className="text-purple-100 font-medium text-sm">Mental Wellbeing</div>
                   
                   {/* Hover Tooltip */}
                   <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
                                   opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <span className="text-[13px] font-small p-2">1. Never;<br/>2. Once or Twice in a month;<br/>3. About once a week;<br/>4. About 2 or 3 times a week;<br/>5. Almost every day;<br/>6. Every day;</span>
+                    <span className="text-[13px] font-small p-2">
+                      Based on B10 questions:<br/>
+                      1. Never<br/>2. Once or Twice in a month<br/>3. About once a week<br/>
+                      4. About 2 or 3 times a week<br/>5. Almost every day<br/>6. Every day
+                    </span>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-2xl text-center">
-                  <Moon className="w-12 h-12 mx-auto mb-4 opacity-80" />
+                
+                {/* Good Sleep - With hover */}
+                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-indigo-600 hover:to-indigo-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Moon className="w-12 h-12 mx-auto mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl lg:text-4xl font-bold mb-2">{goodSleepPercent}%</div>
                   <div className="text-indigo-100 font-medium text-sm">Good Sleep</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2">
+                      Based on Sleep Quality (B16):<br/>
+                      1. Very Good<br/>2. Good<br/>3. Poor<br/>4. Very Poor<br/>
+                      Shows % reporting Very Good or Good sleep quality
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-2xl text-center">
-                  <Search className="w-12 h-12 mx-auto mb-4 opacity-80" />
+                
+                {/* Dementia Knowledge - With hover */}
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-orange-600 hover:to-orange-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Search className="w-12 h-12 mx-auto mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl lg:text-4xl font-bold mb-2">{avgDementiaKnowledge}%</div>
                   <div className="text-orange-100 font-medium text-sm">Dementia Knowledge</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2">
+                      Based on dementia knowledge assessment:<br/>
+                      Correct answers to questions about dementia<br/>
+                      causes, symptoms, and communication
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-6 rounded-2xl text-center transition-all duration-300 hover:from-teal-600 hover:to-teal-700 
+                
+                {/* AI Trust Score - With hover */}
+                <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-6 rounded-2xl text-center 
+                transition-all duration-300 hover:from-teal-600 hover:to-teal-700 
                 hover:shadow-lg cursor-pointer group relative">
                   <Bot className="w-12 h-12 mx-auto mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
-                  <div className="text-3xl lg:text-4xl font-bold mb-2">{avgTrustInAI}/7</div>
+                  <div className="text-3xl lg:text-4xl font-bold mb-2">{convertToPercentage(avgTrustInAI,7)}</div>
                   <div className="text-teal-100 font-medium text-sm">AI Trust Score</div>
 
                   {/* Hover Tooltip */}
                   <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
                                   opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <span className="text-[13px] font-small p-2">1. Strongly Disagree;<br/>2. Disagree;<br/>3. Somewhat Disagree;<br/>4. Neutral;<br/>5. Somewhat Agree;<br/>6. Agree;<br/>7. Strongly Agree;</span>
+                    <span className="text-[13px] font-small p-2">
+                      1. Strongly Disagree<br/>2. Disagree<br/>3. Somewhat Disagree<br/>
+                      4. Neutral<br/>5. Somewhat Agree<br/>6. Agree<br/>7. Strongly Agree
+                    </span>
                   </div>
-                </div>
-                <div className="bg-gradient-to-br from-pink-500 to-pink-600 text-white p-6 rounded-2xl text-center">
-                  <Smartphone className="w-12 h-12 mx-auto mb-4 opacity-80" />
-                  <div className="text-3xl lg:text-4xl font-bold mb-2">{hkCDData.length}</div>
-                  <div className="text-pink-100 font-medium text-sm">AI Tech Survey</div>
                 </div>
               </div>
 
-              {/* Key Insights */}
+              {/* Key Insights - Add hovers to these as well */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="bg-white border-l-4 border-red-500 p-6 rounded-lg shadow-sm">
+                {/* Urban Health - With hover */}
+                <div className="bg-white border-l-4 border-red-500 p-6 rounded-lg shadow-sm
+                transition-all duration-300 hover:shadow-md cursor-pointer group relative">
                   <div className="flex items-center gap-3 mb-4">
                     <Building2 className="w-8 h-8 text-red-500" />
                     <h3 className="text-xl font-bold text-gray-900">Urban Health</h3>
                   </div>
                   <div className="text-3xl font-bold text-red-600 mb-2">{avgAge} years</div>
                   <p className="text-gray-600">average age with {excellentHealthPercent}% excellent health</p>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-lg flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-white text-center">
+                      Average age calculated from A2 question<br/>
+                      Health status from General Health (B3)<br/>
+                      Shows urban population health dynamics
+                    </span>
+                  </div>
                 </div>
 
-                <div className="bg-white border-l-4 border-green-500 p-6 rounded-lg shadow-sm">
+                {/* High Income - With hover */}
+                <div className="bg-white border-l-4 border-green-500 p-6 rounded-lg shadow-sm
+                transition-all duration-300 hover:shadow-md cursor-pointer group relative">
                   <div className="flex items-center gap-3 mb-4">
                     <DollarSign className="w-8 h-8 text-green-500" />
                     <h3 className="text-xl font-bold text-gray-900">High Income</h3>
                   </div>
                   <div className="text-3xl font-bold text-green-600 mb-2">{highIncomePercent}%</div>
                   <p className="text-gray-600">earn above HKD 50,000 monthly</p>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-lg flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-white text-center">
+                      Based on A4 monthly household income:<br/>
+                      6. HKD 50,001-60,000<br/>7. Above HKD 60,000<br/>
+                      Shows socioeconomic status distribution
+                    </span>
+                  </div>
                 </div>
 
-                <div className="bg-white border-l-4 border-purple-500 p-6 rounded-lg shadow-sm">
+                {/* Dementia Aware - With hover */}
+                <div className="bg-white border-l-4 border-purple-500 p-6 rounded-lg shadow-sm
+                transition-all duration-300 hover:shadow-md cursor-pointer group relative">
                   <div className="flex items-center gap-3 mb-4">
                     <Search className="w-8 h-8 text-purple-500" />
                     <h3 className="text-xl font-bold text-gray-900">Dementia Aware</h3>
                   </div>
                   <div className="text-3xl font-bold text-purple-600 mb-2">{Math.round((hkCDData.filter(d => d.C1 === 2).length / hkCDData.length) * 100)}%</div>
                   <p className="text-gray-600">have dementia experience</p>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-lg flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-white text-center">
+                      Based on C1 question:<br/>
+                      1. No dementia experience<br/>2. Has dementia experience<br/>
+                      Personal or family experience with dementia
+                    </span>
+                  </div>
                 </div>
 
-                <div className="bg-white border-l-4 border-blue-500 p-6 rounded-lg shadow-sm">
+                {/* AI Adoption - With hover */}
+                <div className="bg-white border-l-4 border-blue-500 p-6 rounded-lg shadow-sm
+                transition-all duration-300 hover:shadow-md cursor-pointer group relative">
                   <div className="flex items-center gap-3 mb-4">
                     <Bot className="w-8 h-8 text-blue-500" />
                     <h3 className="text-xl font-bold text-gray-900">AI Adoption</h3>
                   </div>
                   <div className="text-3xl font-bold text-blue-600 mb-2">{highIntentionToUse}%</div>
                   <p className="text-gray-600">high intention to use AI health tech</p>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-lg flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-white text-center">
+                      Based on intention to use AI health technology<br/>
+                      Measured on 7-point scale<br/>
+                      Shows % with high adoption likelihood (≥5)
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -409,7 +555,7 @@ export const HongKongAnalysis: React.FC = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={educationData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={90} />
                     <YAxis />
                     <Tooltip formatter={(value, name) => [`${value} people`, 'Count']} />
                     <Bar dataKey="value" fill="#3b82f6" />
@@ -419,23 +565,85 @@ export const HongKongAnalysis: React.FC = () => {
 
               {/* Socioeconomic Insights */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center">
-                  <GraduationCap className="w-16 h-16 mx-auto mb-4 opacity-90" />
-                  <div className="text-4xl font-bold mb-2">4.8</div>
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-blue-600 hover:to-indigo-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <GraduationCap className="w-16 h-16 mx-auto mb-4 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-4xl font-bold mb-2">
+                    {convertToPercentage(calculateAverageEducation(hkData), 7)}
+                  </div>
                   <div className="text-blue-100 font-medium mb-2">Average Education Level</div>
-                  <div className="text-sm text-blue-200">Higher Diploma & Above</div>
+                  <div className="text-sm text-blue-200">
+                    {getEducationLevelDescription(calculateAverageEducation(hkData))}
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Education levels:<br/>
+                      1. Middle school or below<br/>
+                      2. High school<br/>
+                      3. Foundation diploma<br/>
+                      4. Higher diploma<br/>
+                      5. Bachelor's degree<br/>
+                      6. Master's degree<br/>
+                      7. Doctoral degree
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center">
-                  <DollarSign className="w-16 h-16 mx-auto mb-4 opacity-90" />
-                  <div className="text-4xl font-bold mb-2">HKD 42k</div>
+                
+                {/* Median Income - With hover */}
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-green-600 hover:to-emerald-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <DollarSign className="w-16 h-16 mx-auto mb-4 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-4xl font-bold mb-2">
+                    HKD {Math.round(calculateMedianIncome(hkData) / 1000)}k
+                  </div>
                   <div className="text-green-100 font-medium mb-2">Median Income</div>
                   <div className="text-sm text-green-200">Monthly household income</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Monthly household income brackets:<br/>
+                      Below HKD 10,000<br/>
+                      HKD 10,001-20,000<br/>
+                      HKD 20,001-30,000<br/>
+                      HKD 30,001-40,000<br/>
+                      HKD 40,001-50,000<br/>
+                      HKD 50,001-60,000<br/>
+                      Above HKD 60,000
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-6 rounded-2xl text-center">
-                  <Users className="w-16 h-16 mx-auto mb-4 opacity-90" />
-                  <div className="text-4xl font-bold mb-2">6.2</div>
+                
+                {/* Social Ladder - With hover */}
+                <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-purple-600 hover:to-pink-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Users className="w-16 h-16 mx-auto mb-4 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-4xl font-bold mb-2">
+                    {convertToPercentage(calculateAverageSocialLadder(hkData), 10)}
+                  </div>
                   <div className="text-purple-100 font-medium mb-2">Social Ladder</div>
-                  <div className="text-sm text-purple-200">Average perceived status</div>
+                  <div className="text-sm text-purple-200">
+                    {getSocialLadderDescription(calculateAverageSocialLadder(hkData))}
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Self-perceived social standing:<br/>
+                      1st layer: Lowest standing in community<br/>
+                      5th layer: Middle standing<br/>
+                      10th layer: Highest standing in community<br/>
+                      Where people place themselves relative to others
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -488,7 +696,9 @@ export const HongKongAnalysis: React.FC = () => {
 
                 <div className="space-y-6">
                   {/* BMI Analysis */}
-                  <div className="bg-gradient-to-br from-orange-500 to-red-500 text-white p-6 rounded-2xl">
+                  <div className="bg-gradient-to-br from-orange-500 to-red-500 text-white p-6 rounded-2xl
+                  transition-all duration-300 hover:from-orange-600 hover:to-red-600 
+                  hover:shadow-lg cursor-pointer group relative">
                     <h4 className="text-xl font-bold mb-4">BMI Analysis</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
@@ -505,10 +715,25 @@ export const HongKongAnalysis: React.FC = () => {
                         <div className="text-orange-100">Healthy Weight</div>
                       </div>
                     </div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="text-[13px] font-small p-2 text-center">
+                        Body Mass Index categories:<br/>
+                        Underweight: Below 18.5<br/>
+                        Healthy weight: 18.5 - 24.9<br/>
+                        Overweight: 25 - 29.9<br/>
+                        Obesity: 30 and above<br/>
+                        Based on self-reported height and weight
+                      </span>
+                    </div>
                   </div>
 
                   {/* Physical Activity */}
-                  <div className="bg-gradient-to-br from-green-500 to-teal-500 text-white p-6 rounded-2xl">
+                  <div className="bg-gradient-to-br from-green-500 to-teal-500 text-white p-6 rounded-2xl
+                  transition-all duration-300 hover:from-green-600 hover:to-teal-600 
+                  hover:shadow-lg cursor-pointer group relative">
                     <h4 className="text-xl font-bold mb-4">Physical Activity</h4>
                     <div className="space-y-3">
                       <div className="flex justify-between">
@@ -523,6 +748,21 @@ export const HongKongAnalysis: React.FC = () => {
                           Math.round((hkData.filter(d => d['Fruits&Veg'] >= 5).length / hkData.length) * 100)
                         }%</span>
                       </div>
+                    </div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="text-[10px] font-small p-2 text-center">
+                        Physical activity frequency:<br/>
+                        Less than once per week<br/>
+                        1 to 2 times per week<br/>
+                        3 to 4 times per week<br/>
+                        5 to 6 times per week<br/>
+                        More than 6 times per week<br/><br/>
+                        Fruit & vegetable servings:<br/>
+                        5 or more servings daily considered adequate
+                      </span>
                     </div>
                   </div>
 
@@ -549,41 +789,92 @@ export const HongKongAnalysis: React.FC = () => {
               <div className="bg-white p-8 rounded-2xl shadow-sm border">
                 <h4 className="text-2xl font-bold mb-6 text-center">Health Behaviors & Lifestyle</h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  {/* Regular Exercise - With hover */}
+                  <div className="text-center transition-all duration-300 hover:scale-105 cursor-pointer group relative">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors">
                       <Activity className="w-10 h-10 text-green-600" />
                     </div>
                     <div className="text-2xl font-bold text-green-600 mb-1">{
                       Math.round((hkData.filter(d => d.physicalActivity >= 3).length / hkData.length) * 100)
                     }%</div>
                     <div className="text-gray-600 text-sm">Regular Exercise</div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                      <span className="text-[13px] font-small p-2 text-white text-center">
+                        Regular exercise: 3+ times per week<br/>
+                        Includes activities like running,<br/>
+                        gym workouts, sports, or walking<br/>
+                        for exercise purposes
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  
+                  {/* Adequate Nutrition - With hover */}
+                  <div className="text-center transition-all duration-300 hover:scale-105 cursor-pointer group relative">
+                    <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-orange-200 transition-colors">
                       <div className="text-2xl font-bold text-orange-600">🥬</div>
                     </div>
                     <div className="text-2xl font-bold text-orange-600 mb-1">{
                       Math.round((hkData.filter(d => d['Fruits&Veg'] >= 4).length / hkData.length) * 100)
                     }%</div>
                     <div className="text-gray-600 text-sm">Adequate Nutrition</div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                      <span className="text-[13px] font-small p-2 text-white text-center">
+                        Adequate nutrition: 4+ servings daily<br/>
+                        One serving = medium fruit or<br/>
+                        bowl of leafy vegetables<br/>
+                        Meets recommended daily intake
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  
+                  {/* Never Smokers - With hover */}
+                  <div className="text-center transition-all duration-300 hover:scale-105 cursor-pointer group relative">
+                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-red-200 transition-colors">
                       <div className="text-2xl font-bold text-red-600">🚭</div>
                     </div>
                     <div className="text-2xl font-bold text-red-600 mb-1">{
                       Math.round((hkData.filter(d => d.Smoking100Cigs === 1).length / hkData.length) * 100)
                     }%</div>
                     <div className="text-gray-600 text-sm">Never Smokers</div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                      <span className="text-[13px] font-small p-2 text-white text-center">
+                        Never smoked 100 cigarettes<br/>
+                        in their entire life<br/>
+                        Includes complete non-smokers<br/>
+                        and those with minimal exposure
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  
+                  {/* Low Alcohol Use - With hover */}
+                  <div className="text-center transition-all duration-300 hover:scale-105 cursor-pointer group relative">
+                    <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
                       <div className="text-2xl font-bold text-blue-600">🍷</div>
                     </div>
                     <div className="text-2xl font-bold text-blue-600 mb-1">{
                       Math.round((hkData.filter(d => d.AlcoholicDrink <= 2).length / hkData.length) * 100)
                     }%</div>
                     <div className="text-gray-600 text-sm">Low Alcohol Use</div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                      <span className="text-[13px] font-small p-2 text-white text-center">
+                        Low alcohol use: 1-2 days per week<br/>
+                        or less<br/>
+                        Includes beer, wine, malt beverages,<br/>
+                        or liquor consumption
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -594,26 +885,81 @@ export const HongKongAnalysis: React.FC = () => {
             <div className="space-y-8">
               {/* Mental Health Overview */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white p-6 rounded-2xl text-center">
-                  <UserHeart className="w-12 h-12 mx-auto mb-3 opacity-90" />
-                  <div className="text-3xl font-bold mb-1">{(
-                    hkData.reduce((sum, d) => sum + calculateMentalHealthScores(d).emotional, 0) / hkData.length
-                  ).toFixed(1)}</div>
+                <div className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-blue-600 hover:to-cyan-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <UserHeart className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {convertToPercentage(
+                      hkData.reduce((sum, d) => sum + calculateMentalHealthScores(d).emotional, 0) / hkData.length,
+                      6
+                    )}
+                  </div>
                   <div className="text-blue-100 font-medium">Emotional Wellbeing</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Measures frequency of:<br/>
+                      Feeling happy<br/>
+                      Feeling interested in life<br/>
+                      Feeling satisfied with life<br/>
+                      Based on daily emotional experiences
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center">
-                  <Users className="w-12 h-12 mx-auto mb-3 opacity-90" />
-                  <div className="text-3xl font-bold mb-1">{(
-                    hkData.reduce((sum, d) => sum + calculateMentalHealthScores(d).social, 0) / hkData.length
-                  ).toFixed(1)}</div>
+                
+                {/* Social Wellbeing - With hover */}
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-green-600 hover:to-emerald-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {convertToPercentage(
+                      hkData.reduce((sum, d) => sum + calculateMentalHealthScores(d).social, 0) / hkData.length,
+                      6
+                    )}
+                  </div>
                   <div className="text-green-100 font-medium">Social Wellbeing</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Measures sense of:<br/>
+                      Contribution to society<br/>
+                      Community belonging<br/>
+                      Trust in social systems<br/>
+                      Belief in societal goodness
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-500 to-violet-600 text-white p-6 rounded-2xl text-center">
-                  <Brain className="w-12 h-12 mx-auto mb-3 opacity-90" />
-                  <div className="text-3xl font-bold mb-1">{(
-                    hkData.reduce((sum, d) => sum + calculateMentalHealthScores(d).psychological, 0) / hkData.length
-                  ).toFixed(1)}</div>
+                
+                {/* Psychological Wellbeing - With hover */}
+                <div className="bg-gradient-to-br from-purple-500 to-violet-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-purple-600 hover:to-violet-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Brain className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">
+                    {convertToPercentage(
+                      hkData.reduce((sum, d) => sum + calculateMentalHealthScores(d).psychological, 0) / hkData.length,
+                      6
+                    )}
+                  </div>
                   <div className="text-purple-100 font-medium">Psychological Wellbeing</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Measures aspects of:<br/>
+                      Self-acceptance and personality<br/>
+                      Daily life management<br/>
+                      Personal relationships<br/>
+                      Growth experiences and confidence
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -637,7 +983,10 @@ export const HongKongAnalysis: React.FC = () => {
 
               {/* Loneliness Analysis */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-red-500 to-pink-500 text-white p-6 rounded-2xl">
+                {/* Loneliness Indicators - With hover */}
+                <div className="bg-gradient-to-br from-red-500 to-pink-500 text-white p-6 rounded-2xl
+                transition-all duration-300 hover:from-red-600 hover:to-pink-600 
+                hover:shadow-lg cursor-pointer group relative">
                   <h4 className="text-xl font-bold mb-4">Loneliness Indicators</h4>
                   <div className="space-y-3">
                     <div className="flex justify-between">
@@ -659,9 +1008,27 @@ export const HongKongAnalysis: React.FC = () => {
                       }%</span>
                     </div>
                   </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Loneliness scale measures:<br/>
+                      How often people feel:<br/>
+                      • Lack of companionship<br/>
+                      • Left out or ignored<br/>
+                      • Isolated from others<br/>
+                      <br/>
+                      Shows % experiencing these feelings<br/>
+                      at least 3-4 days per week
+                    </span>
+                  </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-teal-500 to-cyan-500 text-white p-6 rounded-2xl">
+                {/* Social Connection - With hover */}
+                <div className="bg-gradient-to-br from-teal-500 to-cyan-500 text-white p-6 rounded-2xl
+                transition-all duration-300 hover:from-teal-600 hover:to-cyan-600 
+                hover:shadow-lg cursor-pointer group relative">
                   <h4 className="text-xl font-bold mb-4">Social Connection</h4>
                   <div className="text-center">
                     <div className="text-4xl font-bold mb-2">{
@@ -669,15 +1036,47 @@ export const HongKongAnalysis: React.FC = () => {
                     }%</div>
                     <div className="text-teal-100">Feel Strong Community Connection</div>
                   </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Combines two key aspects:<br/>
+                      • Feeling of belonging to a community<br/>
+                      • Having warm, trusting relationships<br/>
+                      <br/>
+                      Shows % who experience both<br/>
+                      at least 2-3 times per week<br/>
+                      or more frequently
+                    </span>
+                  </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-500 to-amber-500 text-white p-6 rounded-2xl">
+                {/* Life Satisfaction - With hover */}
+                <div className="bg-gradient-to-br from-orange-500 to-amber-500 text-white p-6 rounded-2xl
+                transition-all duration-300 hover:from-orange-600 hover:to-amber-600 
+                hover:shadow-lg cursor-pointer group relative">
                   <h4 className="text-xl font-bold mb-4">Life Satisfaction</h4>
                   <div className="text-center">
                     <div className="text-4xl font-bold mb-2">{
                       Math.round((hkData.filter(d => d.B10_1 >= 4 && d.B10_3 >= 4).length / hkData.length) * 100)
                     }%</div>
                     <div className="text-orange-100">High Happiness & Life Satisfaction</div>
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Combines two positive emotions:<br/>
+                      • Feeling happy<br/>
+                      • Feeling satisfied with life<br/>
+                      <br/>
+                      Shows % who experience both<br/>
+                      at least 2-3 times per week<br/>
+                      or more frequently<br/>
+                      Indicates overall life contentment
+                    </span>
                   </div>
                 </div>
               </div>
@@ -688,31 +1087,104 @@ export const HongKongAnalysis: React.FC = () => {
             <div className="space-y-8">
               {/* Sleep Quality Overview */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-2xl text-center">
-                  <Moon className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-indigo-600 hover:to-purple-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Moon className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{goodSleepPercent}%</div>
                   <div className="text-indigo-100 font-medium">Good Sleep Quality</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Sleep quality ratings:<br/>
+                      Very Good: Restful and refreshing<br/>
+                      Good: Generally satisfactory<br/>
+                      Poor: Frequently disrupted<br/>
+                      Very Poor: Consistently inadequate<br/>
+                      <br/>
+                      Shows % reporting Very Good or Good sleep
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center">
-                  <Clock className="w-12 h-12 mx-auto mb-3 opacity-90" /> 
-                  <div className="text-3xl font-bold mb-1">{(
+                
+                {/* Average Sleep Duration - With hover */}
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-blue-600 hover:to-indigo-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Clock className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" /> 
+                  <div className="text-3xl font-bold mb-1">{formatHoursAndMinutes(
                     hkData.reduce((sum, d) => sum + d['B14a.1_1_1'], 0) / hkData.length
-                  ).toFixed(1)}h</div>
+                  )}</div>
                   <div className="text-blue-100 font-medium">Average Sleep Duration</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Actual time spent sleeping<br/>
+                      Excludes time lying awake in bed<br/>
+                      <br/>
+                      Recommended for adults:<br/>
+                      7-9 hours per night<br/>
+                      <br/>
+                      Based on self-reported sleep hours
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-green-500 to-teal-600 text-white p-6 rounded-2xl text-center">
-                  <Bed className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                
+                {/* Time to Fall Asleep - With hover */}
+                <div className="bg-gradient-to-br from-green-500 to-teal-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-green-600 hover:to-teal-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Bed className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{(
                     hkData.reduce((sum, d) => sum + d.B13, 0) / hkData.length
                   ).toFixed(0)} min</div>
                   <div className="text-green-100 font-medium">Time to Fall Asleep</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Time from closing eyes to falling asleep<br/>
+                      <br/>
+                      Healthy range: 15-20 minutes<br/>
+                      {'<'}30 minutes: Normal sleep onset<br/>
+                      {'>'}30 minutes: Potential sleep latency issue<br/>
+                      <br/>
+                      Also known as sleep latency
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white p-6 rounded-2xl text-center">
-                  <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                
+                {/* Experience Sleep Troubles - With hover */}
+                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-orange-600 hover:to-red-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{
                     Math.round((hkData.filter(d => d.SleepingTrouble >= 3).length / hkData.length) * 100)
                   }%</div>
                   <div className="text-orange-100 font-medium">Experience Sleep Troubles</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[10px] font-small p-2 text-center">
+                      Waking up in middle of night<br/>
+                      or early morning<br/>
+                      <br/>
+                      Frequency categories:<br/>
+                      None<br/>
+                      Less than once per week<br/>
+                      1-2 times per week<br/>
+                      3 or more times per week<br/>
+                      <br/>
+                      Shows % with 1+ times per week
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -749,7 +1221,9 @@ export const HongKongAnalysis: React.FC = () => {
 
               {/* Lifestyle Factors */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-8 rounded-2xl">
+                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-8 rounded-2xl
+                transition-all duration-300 hover:from-emerald-600 hover:to-teal-700 
+                hover:shadow-lg cursor-pointer group relative">
                   <h4 className="text-2xl font-bold mb-6">Healthy Lifestyle Factors</h4>
                   <div className="space-y-4">
                     <div className="flex justify-between">
@@ -777,9 +1251,24 @@ export const HongKongAnalysis: React.FC = () => {
                       }%</span>
                     </div>
                   </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="text-[13px] font-small p-4 text-center max-w-sm">
+                      <div className="space-y-3">
+                        <div><strong>Regular Physical Activity:</strong><br/>3+ times per week exercise</div>
+                        <div><strong>Adequate Nutrition:</strong><br/>4+ daily servings of fruits & vegetables</div>
+                        <div><strong>Non-Smokers:</strong><br/>Never smoked 100 cigarettes in lifetime</div>
+                        <div><strong>Moderate Alcohol:</strong><br/>1-2 days per week or less consumption</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-8 rounded-2xl">
+                <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-8 rounded-2xl
+                transition-all duration-300 hover:from-purple-600 hover:to-pink-700 
+                hover:shadow-lg cursor-pointer group relative">
                   <h4 className="text-2xl font-bold mb-6">Sleep & Mental Health Connection</h4>
                   <div className="space-y-4">
                     <div className="text-center mb-4">
@@ -794,6 +1283,18 @@ export const HongKongAnalysis: React.FC = () => {
                       life satisfaction, and overall wellbeing in Hong Kong residents.
                     </div>
                   </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="text-[13px] font-small p-4 text-center max-w-sm">
+                      <div className="space-y-3">
+                        <div><strong>Good Sleep Quality:</strong><br/>Rated as Very Good or Good sleep</div>
+                        <div><strong>High Happiness:</strong><br/>Feeling happy at least 2-3 times per week</div>
+                        <div><br/>This correlation shows how sleep quality<br/>directly impacts daily emotional wellbeing<br/>and positive mood experiences</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -803,29 +1304,93 @@ export const HongKongAnalysis: React.FC = () => {
             <div className="space-y-8">
               {/* Dementia Awareness Overview */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 rounded-2xl text-center">
-                  <Search className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                {/* Knowledge Score - With hover */}
+                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-purple-600 hover:to-indigo-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Search className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{avgDementiaKnowledge}%</div>
                   <div className="text-purple-100 font-medium">Knowledge Score</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Based on assessment of dementia knowledge<br/>
+                      covering causes, symptoms, communication,<br/>
+                      and care needs<br/>
+                      Higher scores indicate better understanding<br/>
+                      of dementia facts and misconceptions
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white p-6 rounded-2xl text-center">
-                  <Eye className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                
+                {/* Have Experience - With hover */}
+                <div className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-blue-600 hover:to-cyan-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Eye className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{Math.round((hkCDData.filter(d => d.C1 === 2).length / hkCDData.length) * 100)}%</div>
                   <div className="text-blue-100 font-medium">Have Experience</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Percentage who know someone<br/>
+                      with dementia personally<br/>
+                      Includes family members, friends,<br/>
+                      or acquaintances with the condition<br/>
+                      Shows personal exposure to dementia
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center">
-                  <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                
+                {/* Seeking Intention - With hover */}
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-green-600 hover:to-emerald-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{
-                    (hkCDData.reduce((sum, d) => sum + ((d.C5_1 + d.C5_2 + d.C5_3) / 3), 0) / hkCDData.length).toFixed(1)
+                    (convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C5_1 + d.C5_2 + d.C5_3) / 3), 0) / hkCDData.length,7))
                   }</div>
                   <div className="text-green-100 font-medium">Seeking Intention</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Willingness to seek information<br/>
+                      about dementia in the future<br/>
+                      Measures plans to learn more and<br/>
+                      actively search for dementia-related<br/>
+                      information and resources
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white p-6 rounded-2xl text-center">
-                  <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                
+                {/* Perceived Risk - With hover */}
+                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-orange-600 hover:to-red-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{
-                    (hkCDData.reduce((sum, d) => sum + ((d.C12_1 + d.C12_2 + d.C12_3 + d.C12_4) / 4), 0) / hkCDData.length).toFixed(1)
+                    (convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C12_1 + d.C12_2 + d.C12_3 + d.C12_4) / 4), 0) / hkCDData.length,7))
                   }</div>
                   <div className="text-orange-100 font-medium">Perceived Risk</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Personal assessment of likelihood<br/>
+                      of developing dementia<br/>
+                      Measures perceived susceptibility<br/>
+                      and personal risk factors<br/>
+                      Higher scores indicate greater<br/>
+                      perceived personal risk
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -900,7 +1465,9 @@ export const HongKongAnalysis: React.FC = () => {
               <div className="bg-white p-8 rounded-2xl shadow-sm border">
                 <h4 className="text-2xl font-bold mb-6 text-center">Dementia Knowledge Assessment</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-blue-50 p-6 rounded-lg text-center">
+                  {/* Knowledge Categories - With hover */}
+                  <div className="bg-blue-50 p-6 rounded-lg text-center
+                  transition-all duration-300 hover:shadow-md cursor-pointer group relative">
                     <h5 className="font-bold text-blue-800 mb-4">Knowledge Categories</h5>
                     <div className="space-y-3">
                       <div>
@@ -926,40 +1493,77 @@ export const HongKongAnalysis: React.FC = () => {
                         <div className="text-sm text-green-700">Communication</div>
                       </div>
                     </div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-lg flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                      <div className="text-[13px] font-small p-4 text-white text-center">
+                        <div className="space-y-2">
+                          <div><strong>Causes & Characteristics:</strong><br/>Understanding dementia origins,<br/>common misconceptions, and<br/>disease progression</div>
+                          <div><strong>Communication:</strong><br/>Knowledge about interacting with<br/>dementia patients and effective<br/>communication strategies</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="bg-purple-50 p-6 rounded-lg text-center">
+                  {/* Information Behavior - With hover */}
+                  <div className="bg-purple-50 p-6 rounded-lg text-center
+                  transition-all duration-300 hover:shadow-md cursor-pointer group relative">
                     <h5 className="font-bold text-purple-800 mb-4">Information Behavior</h5>
                     <div className="space-y-3">
                       <div>
                         <div className="text-2xl font-bold text-purple-600">
-                          {(hkCDData.reduce((sum, d) => sum + ((d.C5_1 + d.C5_2 + d.C5_3) / 3), 0) / hkCDData.length).toFixed(1)}
+                          {(convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C5_1 + d.C5_2 + d.C5_3) / 3), 0) / hkCDData.length,7))}
                         </div>
                         <div className="text-sm text-purple-700">Seeking Intention</div>
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-orange-600">
-                          {(hkCDData.reduce((sum, d) => sum + ((d.C6_1 + d.C6_2 + d.C6_3 + d.C6_4) / 4), 0) / hkCDData.length).toFixed(1)}
+                          {(convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C6_1 + d.C6_2 + d.C6_3 + d.C6_4) / 4), 0) / hkCDData.length,7))}
                         </div>
                         <div className="text-sm text-orange-700">Information Avoidance</div>
                       </div>
                     </div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-lg flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                      <div className="text-[13px] font-small p-4 text-white text-center">
+                        <div className="space-y-2">
+                          <div><strong>Seeking Intention:</strong><br/>Willingness to actively search for<br/>dementia information and learn<br/>more about the condition</div>
+                          <div><strong>Information Avoidance:</strong><br/>Tendency to avoid or ignore<br/>dementia-related information<br/>due to discomfort or fear</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="bg-green-50 p-6 rounded-lg text-center">
+                  {/* Risk Perception - With hover */}
+                  <div className="bg-green-50 p-6 rounded-lg text-center
+                  transition-all duration-300 hover:shadow-md cursor-pointer group relative">
                     <h5 className="font-bold text-green-800 mb-4">Risk Perception</h5>
                     <div className="space-y-3">
                       <div>
                         <div className="text-2xl font-bold text-green-600">
-                          {(hkCDData.reduce((sum, d) => sum + ((d.C12_1 + d.C12_2 + d.C12_3 + d.C12_4) / 4), 0) / hkCDData.length).toFixed(1)}
+                          {(convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C12_1 + d.C12_2 + d.C12_3 + d.C12_4) / 4), 0) / hkCDData.length,7))}
                         </div>
                         <div className="text-sm text-green-700">Perceived Susceptibility</div>
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-red-600">
-                          {(hkCDData.reduce((sum, d) => sum + ((d.C13_1 + d.C13_2 + d.C13_3 + d.C13_4 + d.C13_5) / 5), 0) / hkCDData.length).toFixed(1)}
+                          {(convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C13_1 + d.C13_2 + d.C13_3 + d.C13_4 + d.C13_5) / 5), 0) / hkCDData.length,7))}
                         </div>
                         <div className="text-sm text-red-700">Perceived Severity</div>
+                      </div>
+                    </div>
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute inset-0 bg-black bg-opacity-70 rounded-lg flex items-center justify-center 
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                      <div className="text-[13px] font-small p-4 text-white text-center">
+                        <div className="space-y-2">
+                          <div><strong>Perceived Susceptibility:</strong><br/>Personal belief about likelihood<br/>of developing dementia based on<br/>personal risk factors</div>
+                          <div><strong>Perceived Severity:</strong><br/>Assessment of how serious<br/>dementia would be if developed,<br/>including emotional impact</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -976,7 +1580,7 @@ export const HongKongAnalysis: React.FC = () => {
                     </div>
                     <div className="font-semibold mb-1">Newspaper</div>
                     <div className="text-2xl font-bold mb-1">
-                      {(hkCDData.reduce((sum, d) => sum + ((d.C15a_1 + d.C15a_2 + d.C15a_3) / 3), 0) / hkCDData.length).toFixed(1)}
+                      {(convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C15a_1 + d.C15a_2 + d.C15a_3) / 3), 0) / hkCDData.length,5))}
                     </div>
                     <div className="text-sm text-indigo-200">Average attention</div>
                   </div>
@@ -986,7 +1590,7 @@ export const HongKongAnalysis: React.FC = () => {
                     </div>
                     <div className="font-semibold mb-1">Television</div>
                     <div className="text-2xl font-bold mb-1">
-                      {(hkCDData.reduce((sum, d) => sum + ((d.C15b_1 + d.C15b_2 + d.C15b_3) / 3), 0) / hkCDData.length).toFixed(1)}
+                      {(convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C15b_1 + d.C15b_2 + d.C15b_3) / 3), 0) / hkCDData.length,5))}
                     </div>
                     <div className="text-sm text-indigo-200">Average attention</div>
                   </div>
@@ -996,7 +1600,7 @@ export const HongKongAnalysis: React.FC = () => {
                     </div>
                     <div className="font-semibold mb-1">Internet</div>
                     <div className="text-2xl font-bold mb-1">
-                      {(hkCDData.reduce((sum, d) => sum + ((d.C15c_1 + d.C15c_2 + d.C15c_3) / 3), 0) / hkCDData.length).toFixed(1)}
+                      {(convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C15c_1 + d.C15c_2 + d.C15c_3) / 3), 0) / hkCDData.length,5))}
                     </div>
                     <div className="text-sm text-indigo-200">Average attention</div>
                   </div>
@@ -1006,7 +1610,7 @@ export const HongKongAnalysis: React.FC = () => {
                     </div>
                     <div className="font-semibold mb-1">Social Media</div>
                     <div className="text-2xl font-bold mb-1">
-                      {(hkCDData.reduce((sum, d) => sum + ((d.C15d_1 + d.C15d_2 + d.C15d_3) / 3), 0) / hkCDData.length).toFixed(1)}
+                      {(convertToPercentage(hkCDData.reduce((sum, d) => sum + ((d.C15d_1 + d.C15d_2 + d.C15d_3) / 3), 0) / hkCDData.length,5))}
                     </div>
                     <div className="text-sm text-indigo-200">Average attention</div>
                   </div>
@@ -1019,25 +1623,87 @@ export const HongKongAnalysis: React.FC = () => {
             <div className="space-y-8">
               {/* AI Technology Overview */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center">
-                  <Bot className="w-12 h-12 mx-auto mb-3 opacity-90" />
-                  <div className="text-3xl font-bold mb-1">{avgTrustInAI}/7</div>
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-blue-600 hover:to-indigo-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Bot className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl font-bold mb-1">{convertToPercentage(avgTrustInAI,7)}</div>
                   <div className="text-blue-100 font-medium">AI Trust Score</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Confidence in AI health recommendations<br/>
+                      and reliability of AI-assisted<br/>
+                      health technologies<br/>
+                      Measures trust in accuracy and<br/>
+                      dependability of AI health advice
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center">
-                  <Zap className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                
+                {/* High Use Intention - With hover */}
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-green-600 hover:to-emerald-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Zap className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{highIntentionToUse}%</div>
                   <div className="text-green-100 font-medium">High Use Intention</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Percentage with strong plans to use<br/>
+                      AI health technologies in future<br/>
+                      Includes intentions to adopt and<br/>
+                      regularly use AI-assisted health tools<br/>
+                      for personal health management
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white p-6 rounded-2xl text-center">
-                  <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                
+                {/* High Tech Anxiety - With hover */}
+                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-orange-600 hover:to-red-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{techAnxietyPercent}%</div>
                   <div className="text-orange-100 font-medium">High Tech Anxiety</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Percentage experiencing significant<br/>
+                  discomfort or nervousness with<br/>
+                  technology use<br/>
+                  Measures unease with learning<br/>
+                  and using new health technologies
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-6 rounded-2xl text-center">
-                  <Smartphone className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                
+                {/* Active App Users - With hover */}
+                <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-6 rounded-2xl text-center
+                transition-all duration-300 hover:from-purple-600 hover:to-pink-700 
+                hover:shadow-lg cursor-pointer group relative">
+                  <Smartphone className="w-12 h-12 mx-auto mb-3 opacity-90 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl font-bold mb-1">{Math.round((hkCDData.filter(d => d.D5 >= 4).length / hkCDData.length) * 100)}%</div>
                   <div className="text-purple-100 font-medium">Active App Users</div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute inset-0 bg-black bg-opacity-70 rounded-2xl flex items-center justify-center 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[13px] font-small p-2 text-center">
+                      Currently using health apps for<br/>
+                      dementia management or prevention<br/>
+                      Includes both regular usage and<br/>
+                      active engagement with app features<br/>
+                      for health monitoring and support
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1097,7 +1763,7 @@ export const HongKongAnalysis: React.FC = () => {
                   <h4 className="text-xl font-bold mb-4">Performance Expectancy</h4>
                   <div className="text-center">
                     <div className="text-4xl font-bold mb-2">{
-                      (hkCDData.reduce((sum, d) => sum + ((d.D16a_1 + d.D16a_2 + d.D16a_3 + d.D16a_4) / 4), 0) / hkCDData.length).toFixed(1)
+                      convertToPercentage((hkCDData.reduce((sum, d) => sum + ((d.D16a_1 + d.D16a_2 + d.D16a_3 + d.D16a_4) / 4), 0) / hkCDData.length),7)
                     }</div>
                     <div className="text-teal-100 mb-3">Average Score</div>
                     <div className="text-sm text-teal-200">
@@ -1110,7 +1776,7 @@ export const HongKongAnalysis: React.FC = () => {
                   <h4 className="text-xl font-bold mb-4">Effort Expectancy</h4>
                   <div className="text-center">
                     <div className="text-4xl font-bold mb-2">{
-                      (hkCDData.reduce((sum, d) => sum + ((d.D16b_1 + d.D16b_2 + d.D16b_3) / 3), 0) / hkCDData.length).toFixed(1)
+                      convertToPercentage((hkCDData.reduce((sum, d) => sum + ((d.D16b_1 + d.D16b_2 + d.D16b_3) / 3), 0) / hkCDData.length),7)
                     }</div>
                     <div className="text-purple-100 mb-3">Average Score</div>
                     <div className="text-sm text-purple-200">
@@ -1123,7 +1789,7 @@ export const HongKongAnalysis: React.FC = () => {
                   <h4 className="text-xl font-bold mb-4">Social Influence</h4>
                   <div className="text-center">
                     <div className="text-4xl font-bold mb-2">{
-                      (hkCDData.reduce((sum, d) => sum + ((d.D16c_1 + d.D16c_2 + d.D16c_3) / 3), 0) / hkCDData.length).toFixed(1)
+                      convertToPercentage((hkCDData.reduce((sum, d) => sum + ((d.D16c_1 + d.D16c_2 + d.D16c_3) / 3), 0) / hkCDData.length),7)
                     }</div>
                     <div className="text-orange-100 mb-3">Average Score</div>
                     <div className="text-sm text-orange-200">
@@ -1141,19 +1807,19 @@ export const HongKongAnalysis: React.FC = () => {
                     <div className="flex justify-between">
                       <span>Information Misuse Concern</span>
                       <span className="font-bold">{
-                        (hkCDData.reduce((sum, d) => sum + d.D14_1, 0) / hkCDData.length).toFixed(1)
+                        convertToPercentage((hkCDData.reduce((sum, d) => sum + d.D14_1, 0) / hkCDData.length),7)
                       }</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Privacy Finding Concern</span>
                       <span className="font-bold">{
-                        (hkCDData.reduce((sum, d) => sum + d.D14_2, 0) / hkCDData.length).toFixed(1)
+                        convertToPercentage((hkCDData.reduce((sum, d) => sum + d.D14_2, 0) / hkCDData.length),7)
                       }</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Information Sharing Concern</span>
                       <span className="font-bold">{
-                        (hkCDData.reduce((sum, d) => sum + d.D14_3, 0) / hkCDData.length).toFixed(1)
+                        convertToPercentage((hkCDData.reduce((sum, d) => sum + d.D14_3, 0) / hkCDData.length),7)
                       }</span>
                     </div>
                   </div>
@@ -1164,7 +1830,7 @@ export const HongKongAnalysis: React.FC = () => {
                   <div className="space-y-4">
                     <div className="text-center mb-4">
                       <div className="text-4xl font-bold mb-2">{
-                        (hkCDData.reduce((sum, d) => sum + ((d.D10_1 + d.D10_2 + d.D10_3 + d.D10_4 + d.D10_5) / 5), 0) / hkCDData.length).toFixed(1)
+                        convertToPercentage((hkCDData.reduce((sum, d) => sum + ((d.D10_1 + d.D10_2 + d.D10_3 + d.D10_4 + d.D10_5) / 5), 0) / hkCDData.length),7)
                       }</div>
                       <div className="text-indigo-100">Average Ownership Score</div>
                     </div>
@@ -1201,14 +1867,14 @@ export const HongKongAnalysis: React.FC = () => {
             <div className="text-4xl mb-3">🤖</div>
             <h4 className="font-bold mb-2 text-lg">AI Technology Adoption</h4>
             <p className="text-sm text-gray-200">
-              Trust score of {avgTrustInAI}/7 with {highIntentionToUse}% showing high intention to use AI health technologies.
+              Trust score of {convertToPercentage(avgTrustInAI,7)} with {highIntentionToUse}% showing high intention to use AI health technologies.
             </p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm p-6 rounded-lg border border-white/20">
             <div className="text-4xl mb-3">💤</div>
             <h4 className="font-bold mb-2 text-lg">Holistic Wellbeing</h4>
             <p className="text-sm text-gray-200">
-              {goodSleepPercent}% good sleep quality supporting mental wellbeing score of {avgMentalHealth}/6 in urban environment.
+              {goodSleepPercent}% good sleep quality supporting mental wellbeing score of {convertToPercentage(avgMentalHealth)} in urban environment.
             </p>
           </div>
         </div>

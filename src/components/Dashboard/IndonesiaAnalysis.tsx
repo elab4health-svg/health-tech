@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from 'recharts';
 import { getCountryData, HealthData, getCountryByCode } from '../../data/sampleDataAsean';
+import { FlagImage } from './flagImage';
 import { Users, Watch, Heart, Brain, TrendingUp, Award, MapPin, GraduationCap, DollarSign, Activity, Zap, Smartphone } from 'lucide-react';
 
 export const IndonesiaAnalysis: React.FC = () => {
@@ -473,11 +474,9 @@ export const IndonesiaAnalysis: React.FC = () => {
   return (
     <div className="space-y-8 bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl">
       {/* Header */}
-      <div className="text-center bg-white p-8 rounded-2xl shadow-sm">
+      <div className="text-center bg-gray-200 p-8 rounded-2xl shadow-sm">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
-            <MapPin className="w-6 h-6 text-white" />
-          </div>
+          <FlagImage code='id' size='xxl'/>
           <h1 className="text-4xl font-bold text-gray-900">Indonesia</h1>
         </div>
         <h2 className="text-2xl font-semibold text-gray-700 mb-2">Digital Health Technology Analysis</h2>
